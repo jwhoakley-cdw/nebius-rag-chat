@@ -1,0 +1,12 @@
+.docker
+.tavily
+.env
+.venv
+.ngc-token
+.nebius-token
+.DS_Store
+
+old
+py-env
+src
+token-factory-cookbook

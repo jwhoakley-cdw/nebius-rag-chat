@@ -1,4 +1,4 @@
-name: Deploy to Azure ACI
+name: Deploy to Azure Public ACI
 
 on:
   push:

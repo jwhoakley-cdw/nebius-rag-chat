@@ -32,9 +32,9 @@ jobs:
               --resource-group ${{ vars.RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --image ${{ env.IMAGE_NAME }}:latest \              
-              --environment-variables TUNNEL_TOKEN=${{ env.CLOUDFLARE_TOKEN }} \
-              --command-line "cloudflared tunnel --no-autoupdate run" \
               --os-type Linux \
               --memory 1 \
               --cpu 1 \
-              --restart-policy Always
+              --restart-policy Always \
+              --secure-environment-variables TUNNEL_TOKEN=${{ env.CLOUDFLARE_TOKEN }} \
+              --command-line "cloudflared tunnel --no-autoupdate run"

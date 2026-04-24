@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
   IMAGE_NAME: nebius-rag-chat
-  CONTAINER_NAME: nebius-rag-chat-container
+  CONTAINER_NAME: nebius-rag-chat-public-container
   RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
 
 jobs:

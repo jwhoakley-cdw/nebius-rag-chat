@@ -1,4 +1,4 @@
-name: Remove Azure ACI
+name: Remove Azure Public ACI
 
 on:
   workflow_dispatch:

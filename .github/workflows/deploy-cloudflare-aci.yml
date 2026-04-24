@@ -1,0 +1,40 @@
+name: Deploy Cloudflare Connector to Azure ACI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+  IMAGE_NAME: cloudflare/cloudflared
+  CONTAINER_NAME: cloudflared-connector-container
+  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+  CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Instances
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az container create \
+              --resource-group ${{ vars.RESOURCE_GROUP }} \
+              --name ${{ env.CONTAINER_NAME }} \
+              --image ${{ env.IMAGE_NAME }}:latest \              
+              --secure-environment-variables TUNNEL_TOKEN=${{ env.CLOUDFLARE_TOKEN }} \
+              --command-line "cloudflared tunnel --no-autoupdate run" \
+              --os-type Linux
+              --memory 1 \
+              --cpu 1 \
+              --restart-policy Always

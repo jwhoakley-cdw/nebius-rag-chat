@@ -1,4 +1,4 @@
-name: Remove Azure Container Instance
+name: Remove Azure ACI
 
 on:
   workflow_dispatch:

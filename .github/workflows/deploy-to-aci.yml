@@ -20,6 +20,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Generate DNS Name Label
+        id: dns
+        run: |
+          RANDOM_NUM=$((RANDOM % 100))
+          DNS_NAME_LABEL="nebius-rag-chat-${RANDOM_NUM}"
+          echo "dns_name_label=${DNS_NAME_LABEL}" >> $GITHUB_OUTPUT
+          echo "Generated DNS Name Label: ${DNS_NAME_LABEL}"
+
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -39,6 +47,7 @@ jobs:
               --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
               --os-type linux \
               --subnet ${{ vars.ACI_SUBNET_ID }} \
+              --dns-name-label ${{ env.DNS_NAME_LABEL }} \
               --ports 8501 \
               --memory 1 \
               --cpu 1 \
@@ -64,4 +73,24 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.ip \
               -o tsv
+
+      - name: Get FQDN and DNS Name
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            echo "=== Container FQDN and DNS Details ==="
+            FQDN=$(az container show \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${{ env.CONTAINER_NAME }} \
+              --query ipAddress.fqdn \
+              -o tsv)
+            DNS_LABEL=$(az container show \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${{ env.CONTAINER_NAME }} \
+              --query ipAddress.dnsNameLabel \
+              -o tsv)
+            echo "FQDN: $FQDN"
+            echo "DNS Name Label: $DNS_LABEL"
+            echo "Access URL: http://$FQDN:8501"
 

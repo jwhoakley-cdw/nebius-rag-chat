@@ -30,6 +30,6 @@ jobs:
               --cpu 1 \
               --restart-policy Always \
               --secrets TUNNEL_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }} \
-              --secret-mount-path /cf-token \
-              --command-line "cloudflared tunnel --no-autoupdate run --token-file /cf-token"
+              --secrets-mount-path /mnt/secrets \
+              --command-line "cloudflared tunnel --no-autoupdate run --token-file /mnt/secrets/TUNNEL_TOKEN"
               #--secure-environment-variables TUNNEL_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }} \

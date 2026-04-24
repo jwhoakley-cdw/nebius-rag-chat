@@ -51,7 +51,10 @@ jobs:
               --memory 1 \
               --cpu 1 \
               --environment-variables LOG_LEVEL=INFO \
+              --secure-environment-variables NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
               --restart-policy OnFailure
+#              --secrets NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
+#              --secrets-mount-path /mnt/secrets \
 
       - name: Get Container Details
         uses: azure/CLI@v1

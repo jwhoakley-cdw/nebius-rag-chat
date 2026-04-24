@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
   IMAGE_NAME: nebius-rag-chat
-  CONTAINER_NAME: nebius-rag-chat-container
+  CONTAINER_NAME: nebius-rag-chat-private-container
   RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
 
 jobs:
@@ -47,7 +47,6 @@ jobs:
               --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
               --os-type linux \
               --subnet ${{ vars.ACI_SUBNET_ID }} \
-              --dns-name-label ${{ steps.dns.outputs.dns_name_label }} \
               --ports 8501 \
               --memory 1 \
               --cpu 1 \

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  CONTAINER_NAME: nebius-rag-chat-container
+  CONTAINER_NAME: nebius-rag-chat-public-container
   RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
 
 jobs:

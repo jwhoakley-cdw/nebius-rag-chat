@@ -37,7 +37,7 @@ jobs:
               --registry-login-server ${{ env.REGISTRY_LOGIN_SERVER }} \
               --registry-username ${{ secrets.REGISTRY_USERNAME }} \
               --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
-              --os-type linux
+              --os-type linux \
               --ports 8501 \
               --memory 1 \
               --cpu 1 \

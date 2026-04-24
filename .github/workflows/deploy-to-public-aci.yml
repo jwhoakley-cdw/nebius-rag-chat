@@ -93,4 +93,3 @@ jobs:
             echo "FQDN: $FQDN"
             echo "DNS Name Label: $DNS_LABEL"
             echo "Access URL: http://$FQDN:8501"
-

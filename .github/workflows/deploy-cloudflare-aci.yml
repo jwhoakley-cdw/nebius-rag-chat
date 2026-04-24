@@ -23,8 +23,8 @@ jobs:
           inlineScript: |
             az container create \
               --resource-group ${{ vars.RESOURCE_GROUP }} \
-              --name cloudflared-connector-container
-              --image cloudflare/cloudflared
+              --name cloudflared-connector-container \
+              --image cloudflare/cloudflared \
               --os-type Linux \
               --memory 1 \
               --cpu 1 \

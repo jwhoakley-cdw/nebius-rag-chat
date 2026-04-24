@@ -47,7 +47,7 @@ jobs:
               --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
               --os-type linux \
               --subnet ${{ vars.ACI_SUBNET_ID }} \
-              --dns-name-label ${{ env.DNS_NAME_LABEL }} \
+              --dns-name-label ${{ steps.dns.outputs.dns_name_label }} \
               --ports 8501 \
               --memory 1 \
               --cpu 1 \

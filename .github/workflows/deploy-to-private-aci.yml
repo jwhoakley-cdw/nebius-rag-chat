@@ -31,7 +31,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZJWHO_CDW_AI_SP }}
 
       - name: Deploy to Azure Container Instances
         uses: azure/CLI@v1

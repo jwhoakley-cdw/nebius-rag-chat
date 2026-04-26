@@ -1,0 +1,143 @@
+name: Daily Azure Running Inventory
+
+on:
+  schedule:
+    # Daily at 06:15 UK time-ish.
+    # GitHub schedules are UTC; adjust as needed.
+    - cron: "15 5 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZJWHO_SP_INVENTORY_READER }}
+
+      - name: Install required Azure CLI extensions
+        run: |
+          az extension add --name resource-graph --only-show-errors || az extension update --name resource-graph --only-show-errors
+          # costmanagement not required for "what's running", but optional later:
+          # az extension add --name costmanagement --only-show-errors || az extension update --name costmanagement --only-show-errors
+        # Resource Graph CLI support is provided via the resource-graph extension and used through `az graph query`. [4](https://learn.microsoft.com/en-us/azure/governance/resource-graph/first-query-azurecli)[5](https://learn.microsoft.com/en-us/cli/azure/graph?view=azure-cli-latest)
+
+      - name: Generate running inventory report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+
+          TS="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          # ---------------------------
+          # 1) Running VMs (Resource Graph)
+          # Resource Graph has sample patterns including summarizing VMs by power state. [6](https://learn.microsoft.com/en-us/azure/governance/resource-graph/samples/advanced)[5](https://learn.microsoft.com/en-us/cli/azure/graph?view=azure-cli-latest)
+          # This query pulls the instanceView power state if available.
+          # (If your tenant restricts instanceView, you can fall back to `az vm list -d` per subscription.)
+          # ---------------------------
+          VM_JSON=$(az graph query -q "
+          resources
+          | where type =~ 'microsoft.compute/virtualmachines'
+          | extend powerState = tostring(properties.extended.instanceView.powerState.code)
+          | project name, resourceGroup, subscriptionId, location, powerState
+          | order by subscriptionId asc, resourceGroup asc, name asc
+          " -o json)
+
+          # Running or starting-ish states
+          VM_RUNNING_JSON=$(echo "$VM_JSON" | jq '[.data[] | select(.powerState != null) | select(.powerState | test(\"running|starting\"; \"i\"))]')
+
+          # ---------------------------
+          # 2) AKS cluster power state (CLI)
+          # `powerState.code` is the field commonly used to show Running/Stopped in `az aks list`. [7](https://stackoverflow.com/questions/76082117/how-to-list-all-aks-with-status-via-cli-running-stopped)[8](https://learn.microsoft.com/en-us/cli/azure/aks/nodepool?view=azure-cli-latest)
+          # ---------------------------
+          AKS_JSON=$(az aks list --query "[].{name:name, resourceGroup:resourceGroup, location:location, power:powerState.code}" -o json || echo "[]")
+          AKS_RUNNING_JSON=$(echo "$AKS_JSON" | jq '[.[] | select(.power != null) | select(.power | test(\"running\"; \"i\"))]')
+
+          # ---------------------------
+          # 3) ACI container groups state
+          # Container group state is exposed as `properties.instanceView.state`. [9](https://learn.microsoft.com/en-us/azure/container-instances/container-state)[10](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest)
+          # ---------------------------
+          ACI_JSON=$(az container list --query "[].{name:name, resourceGroup:resourceGroup, location:location, state:instanceView.state}" -o json || echo "[]")
+          ACI_RUNNING_JSON=$(echo "$ACI_JSON" | jq '[.[] | select(.state != null) | select(.state | test(\"running\"; \"i\"))]')
+
+          # ---------------------------
+          # 4) Stopped App Services (optional, helpful)
+          # Example query pattern for stopped App Services exists in Resource Graph samples. [11](https://github.com/whaakman/azure-resource-graph-samples)[6](https://learn.microsoft.com/en-us/azure/governance/resource-graph/samples/advanced)
+          # ---------------------------
+          WEB_STOPPED_JSON=$(az graph query -q "
+          resources
+          | where type =~ 'microsoft.web/sites'
+          | extend state = tostring(aliases['Microsoft.Web/sites/state'])
+          | where state =~ 'stopped'
+          | project name, resourceGroup, subscriptionId, location, state
+          | order by subscriptionId asc, resourceGroup asc, name asc
+          " -o json | jq '.data' )
+
+          # ---------------------------
+          # Compose output JSON
+          # ---------------------------
+          jq -n \
+            --arg timestamp "$TS" \
+            --argjson runningVMs "$VM_RUNNING_JSON" \
+            --argjson runningAKS "$AKS_RUNNING_JSON" \
+            --argjson runningACI "$ACI_RUNNING_JSON" \
+            --argjson stoppedWebApps "$WEB_STOPPED_JSON" \
+            '{
+              timestamp: $timestamp,
+              running: {
+                vms: $runningVMs,
+                aks: $runningAKS,
+                aci: $runningACI
+              },
+              stopped: {
+                webApps: $stoppedWebApps
+              }
+            }' > reports/azure-running-summary.json
+
+          # ---------------------------
+          # Markdown summary
+          # ---------------------------
+          VM_COUNT=$(jq '.running.vms | length' reports/azure-running-summary.json)
+          AKS_COUNT=$(jq '.running.aks | length' reports/azure-running-summary.json)
+          ACI_COUNT=$(jq '.running.aci | length' reports/azure-running-summary.json)
+          WEB_STOPPED_COUNT=$(jq '.stopped.webApps | length' reports/azure-running-summary.json)
+
+          {
+            echo "# Azure Daily Running Inventory"
+            echo
+            echo "- Timestamp (UTC): **$TS**"
+            echo "- Running VMs: **$VM_COUNT**"
+            echo "- Running AKS clusters: **$AKS_COUNT**"
+            echo "- Running ACI container groups: **$ACI_COUNT**"
+            echo "- Stopped Web Apps: **$WEB_STOPPED_COUNT**"
+            echo
+            echo "## Running VMs"
+            jq -r '.running.vms[] | "- \(.subscriptionId) / \(.resourceGroup) / **\(.name)** (\(.location)) — \(.powerState)"' reports/azure-running-summary.json || true
+            echo
+            echo "## Running AKS"
+            jq -r '.running.aks[] | "- \(.resourceGroup) / **\(.name)** (\(.location)) — \(.power)"' reports/azure-running-summary.json || true
+            echo
+            echo "## Running ACI"
+            jq -r '.running.aci[] | "- \(.resourceGroup) / **\(.name)** (\(.location)) — \(.state)"' reports/azure-running-summary.json || true
+            echo
+            echo "## Stopped Web Apps"
+            jq -r '.stopped.webApps[] | "- \(.subscriptionId) / \(.resourceGroup) / **\(.name)** (\(.location)) — \(.state)"' reports/azure-running-summary.json || true
+          } > reports/azure-running-summary.md
+
+      - name: Commit report back to repo
+        run: |
+          git config user.name "azure-inventory-bot"
+          git config user.email "azure-inventory-bot@users.noreply.github.com"
+          git add reports/azure-running-summary.*
+          git commit -m "chore: daily azure running inventory" || echo "No changes to commit"
+          git push

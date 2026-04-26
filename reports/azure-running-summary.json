@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-26T17:34:23Z",
+  "running": {
+    "vms": [],
+    "aks": [],
+    "aci": []
+  },
+  "stopped": {
+    "webApps": []
+  }
+}

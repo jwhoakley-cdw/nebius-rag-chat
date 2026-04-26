@@ -63,21 +63,24 @@ jobs:
           " -o json)
 
           # Running or starting-ish states
-          VM_RUNNING_JSON=$(echo "$VM_JSON" | jq '[.data[] | select(.powerState != null) | select(.powerState | test(\"running|starting\"; \"i\"))]')
+          #VM_RUNNING_JSON=$(echo "$VM_JSON" | jq '[.data[] | select(.powerState != null) | select(.powerState | test("running|starting"; "i"))]')
+          VM_RUNNING_JSON=$(printf '%s' "$VM_JSON" | jq '[.data[] | select(.powerState? != null) | select(.powerState | test("running|starting"; "i"))]')
 
           # ---------------------------
           # 2) AKS cluster power state (CLI)
           # `powerState.code` is the field commonly used to show Running/Stopped in `az aks list`. [7](https://stackoverflow.com/questions/76082117/how-to-list-all-aks-with-status-via-cli-running-stopped)[8](https://learn.microsoft.com/en-us/cli/azure/aks/nodepool?view=azure-cli-latest)
           # ---------------------------
           AKS_JSON=$(az aks list --query "[].{name:name, resourceGroup:resourceGroup, location:location, power:powerState.code}" -o json || echo "[]")
-          AKS_RUNNING_JSON=$(echo "$AKS_JSON" | jq '[.[] | select(.power != null) | select(.power | test(\"running\"; \"i\"))]')
+          #AKS_RUNNING_JSON=$(echo "$AKS_JSON" | jq '[.[] | select(.power != null) | select(.power | test("running"; "i"))]')
+          AKS_RUNNING_JSON=$(printf '%s' "$AKS_JSON" | jq '[.[] | select(.power? != null) | select(.power | test("running"; "i"))]')
 
           # ---------------------------
           # 3) ACI container groups state
           # Container group state is exposed as `properties.instanceView.state`. [9](https://learn.microsoft.com/en-us/azure/container-instances/container-state)[10](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest)
           # ---------------------------
           ACI_JSON=$(az container list --query "[].{name:name, resourceGroup:resourceGroup, location:location, state:instanceView.state}" -o json || echo "[]")
-          ACI_RUNNING_JSON=$(echo "$ACI_JSON" | jq '[.[] | select(.state != null) | select(.state | test(\"running\"; \"i\"))]')
+          #ACI_RUNNING_JSON=$(echo "$ACI_JSON" | jq '[.[] | select(.state != null) | select(.state | test("running"; "i"))]')
+          ACI_RUNNING_JSON=$(printf '%s' "$ACI_JSON" | jq '[.[] | select(.state? != null) | select(.state | test("running"; "i"))]')
 
           # ---------------------------
           # 4) Stopped App Services (optional, helpful)

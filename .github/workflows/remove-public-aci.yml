@@ -5,7 +5,6 @@ on:
 
 env:
   CONTAINER_NAME: nebius-rag-chat-public-container
-  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
 
 jobs:
   remove:
@@ -27,7 +26,7 @@ jobs:
           inlineScript: |
             echo "Attempting to delete container: ${{ env.CONTAINER_NAME }}"
             az container delete \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --yes
             echo "Container deletion completed"
@@ -39,7 +38,7 @@ jobs:
           inlineScript: |
             echo "Verifying container removal..."
             if az container show \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} 2>/dev/null; then
               echo "Container still exists - deletion may have failed"
               exit 1

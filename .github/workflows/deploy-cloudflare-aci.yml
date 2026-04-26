@@ -22,7 +22,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az container create \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name cloudflared-connector-container \
               --image cloudflare/cloudflared:latest \
               --os-type Linux \

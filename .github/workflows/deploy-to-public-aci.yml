@@ -10,7 +10,6 @@ env:
   REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
   IMAGE_NAME: nebius-rag-chat
   CONTAINER_NAME: nebius-rag-chat-public-container
-  RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
 
 jobs:
   deploy:
@@ -39,7 +38,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az container create \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --image ${{ env.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
               --registry-login-server ${{ env.REGISTRY_LOGIN_SERVER }} \
@@ -60,7 +59,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az container show \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }}
 
       - name: Get ACI private IP
@@ -69,7 +68,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az container show \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.ip \
               -o tsv
@@ -81,12 +80,12 @@ jobs:
           inlineScript: |
             echo "=== Container FQDN and DNS Details ==="
             FQDN=$(az container show \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.fqdn \
               -o tsv)
             DNS_LABEL=$(az container show \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.dnsNameLabel \
               -o tsv)

@@ -79,16 +79,18 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-            # retrieve the principal ID of the container’s managed identity:
+            # Retrieve the principal ID of the container’s managed identity:
             ACI_PRINCIPAL_ID=$(az container show \
               --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
               --name ${{ env.CONTAINER_NAME }} \
               --query identity.principalId -o tsv)
-            # Grant the container access to the Key Vault secret
-            az role assignment create \
-              --assignee $ACI_PRINCIPAL_ID \
-              --role "Key Vault Secrets User" \
-              --scope $(az keyvault show \
+            # Get the Key Vault scope:
+            KV_SCOPE=$(az keyvault show \
               --name ${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
-              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
-              query id -o tsv)
+              --query id -o tsv)
+            # Grant the container access to the Key Vault secret:
+            az role assignment create \
+              --assignee-object-id $ACI_PRINCIPAL_ID \
+              --assignee-principal-type ServicePrincipal \
+              --role "Key Vault Secrets User" \
+              --scope $KV_SCOPE

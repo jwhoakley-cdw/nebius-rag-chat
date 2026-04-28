@@ -7,3 +7,5 @@ llama-index-tools-tavily-research
 python-dotenv
 PyPDF2
 pydantic
+azure.identity
+azure.keyvault.secrets

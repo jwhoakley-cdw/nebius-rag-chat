@@ -49,11 +49,13 @@ jobs:
               --ports 8501 \
               --memory 1 \
               --cpu 1 \
+              --assign-identity \
               --environment-variables LOG_LEVEL=INFO \
-              --secure-environment-variables NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
+              --secure-environment-variables \ 
+                NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} \
+               TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \ 
+               KEYVAULT_NAME=${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
               --restart-policy OnFailure
-#              --secrets NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
-#              --secrets-mount-path /mnt/secrets \
 
       - name: Get Container Details
         uses: azure/CLI@v1
@@ -74,3 +76,18 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.ip \
               -o tsv
+
+        # retrieve the principal ID of the container’s managed identity:
+              ACI_PRINCIPAL_ID=$(az container show \
+  --resource-group my-rg \
+  --name my-ai-container \
+  --query identity.principalId -o tsv)
+
+        # Grant the container access to the Key Vault secret
+
+  az role assignment create \
+  --assignee $ACI_PRINCIPAL_ID \
+  --role "Key Vault Secrets User" \
+  --scope $(az keyvault show \
+      --name my-kv-ai-secrets \
+      --query id -o tsv)

@@ -19,14 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate DNS Name Label
-        id: dns
-        run: |
-          RANDOM_NUM=$((RANDOM % 100))
-          DNS_NAME_LABEL="nebius-rag-chat-${RANDOM_NUM}"
-          echo "dns_name_label=${DNS_NAME_LABEL}" >> $GITHUB_OUTPUT
-          echo "Generated DNS Name Label: ${DNS_NAME_LABEL}"
-
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -51,7 +43,7 @@ jobs:
               --cpu 1 \
               --assign-identity \
               --environment-variables LOG_LEVEL=INFO \
-              --secure-environment-variables NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} KEYVAULT_NAME=${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
+              --secure-environment-variables NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \
               --restart-policy OnFailure
 
       - name: Get Container Details
@@ -73,24 +65,3 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --query ipAddress.ip \
               -o tsv
-
-      - name: Grant the container access to the Key Vault secret
-        uses: azure/CLI@v1
-        with:
-          azcliversion: latest
-          inlineScript: |
-            # Retrieve the principal ID of the container’s managed identity:
-            ACI_PRINCIPAL_ID=$(az container show \
-              --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
-              --name ${{ env.CONTAINER_NAME }} \
-              --query identity.principalId -o tsv)
-            # Get the Key Vault scope:
-            KV_SCOPE=$(az keyvault show \
-              --name ${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
-              --query id -o tsv)
-            # Grant the container access to the Key Vault secret:
-            az role assignment create \
-              --assignee-object-id $ACI_PRINCIPAL_ID \
-              --assignee-principal-type ServicePrincipal \
-              --role "Key Vault Secrets User" \
-              --scope $KV_SCOPE

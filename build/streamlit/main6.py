@@ -35,7 +35,10 @@ KEYVAULT_NAME = os.environ.get("AZJWHO_CDW_AI_KEYVAULT_NAME",)
 KV_URL = f"https://{KEYVAULT_NAME}.vault.azure.net"
 credential = DefaultAzureCredential()
 client = SecretClient(vault_url=KV_URL, credential=credential)
-api_key = client.get_secret("MODEL-API-KEY").value
+try:
+    api_key = client.get_secret("MODEL-API-KEY").value
+except Exception as e:
+    raise RuntimeError("Failed to retrieve MODEL-API-KEY from Key Vault") from e
 
 # ---------------------------------------------------------------------------
 # Core query functions

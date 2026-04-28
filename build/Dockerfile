@@ -8,7 +8,6 @@ WORKDIR /app
 # Install some additional tools (TEMPORARY)
 RUN apt-get update && \
     apt-get -y upgrade && \
-#    apt-get -y install vim-tiny curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy over pip requirements
@@ -16,6 +15,9 @@ COPY . .
 
 # pip install all python requirements
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Remove unnecessary files
+RUN rm Dockerfile
 
 # Expose the default Streamlit port
 EXPOSE 8501

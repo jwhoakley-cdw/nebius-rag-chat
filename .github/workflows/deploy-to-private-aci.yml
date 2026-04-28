@@ -51,10 +51,7 @@ jobs:
               --cpu 1 \
               --assign-identity \
               --environment-variables LOG_LEVEL=INFO \
-              --secure-environment-variables \ 
-                NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} \
-               TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} \ 
-               KEYVAULT_NAME=${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
+              --secure-environment-variables NEBIUS_API_KEY=${{ secrets.NEBIUS_API_KEY }} TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} KEYVAULT_NAME=${{ vars.AZJWHO_CDW_AI_KEYVAULT_NAME }} \
               --restart-policy OnFailure
 
       - name: Get Container Details

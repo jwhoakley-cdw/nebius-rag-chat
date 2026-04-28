@@ -8,8 +8,7 @@ client = OpenAI(
 )
 
 response = client.embeddings.create(
-    #model="Qwen/Qwen3-Embedding-8B",
-    model="BAAI/bge-multilingual-gemma2",
+    model="Qwen/Qwen3-Embedding-8B",
     input="USER_INPUT"
 )
 

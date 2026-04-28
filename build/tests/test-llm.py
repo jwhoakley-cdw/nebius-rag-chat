@@ -8,7 +8,8 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="nvidia/nemotron-3-super-120b-a12b",
+    #model="nvidia/nemotron-3-super-120b-a12b",
+    model="MiniMaxAI/MiniMax-M2.5-fast",
     messages=[
         {
             "role": "system",
@@ -25,3 +26,5 @@ response = client.chat.completions.create(
         }
     ]
 )
+
+print(response.to_json())
